@@ -1,0 +1,9 @@
+rootProject.name = 'lotto-msa'
+
+include(
+        'lotto-api',
+        'lotto-purchase-service',
+        'lotto-draw-service',
+        'lotto-result-service',
+        'util'
+)
