@@ -2,8 +2,8 @@ rootProject.name = 'lotto-msa'
 
 include(
         'lotto-api',
-        'lotto-purchase-service',
-        'lotto-draw-service',
-        'lotto-result-service',
+        'lotto-purchase-service',//7001
+        'lotto-draw-service',//7002
+        'lotto-result-service',//7003
         'util'
 )

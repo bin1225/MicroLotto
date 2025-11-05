@@ -1,3 +1,5 @@
 spring:
   application:
     name: lotto-draw-service
+server:
+  port: 7002
