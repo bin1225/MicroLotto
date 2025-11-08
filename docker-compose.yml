@@ -1,0 +1,161 @@
+services:
+  # =========================
+  # Database Services
+  # =========================
+  
+  lotto-purchase-db:
+    image: mysql:8.0
+    container_name: lotto-purchase-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: lotto_purchase
+      MYSQL_USER: lotto_user
+      MYSQL_PASSWORD: lotto1234
+    ports:
+      - "3316:3306"
+    volumes:
+      - lotto-purchase-data:/var/lib/mysql
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  lotto-draw-db:
+    image: mysql:8.0
+    container_name: lotto-draw-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: lotto_draw
+      MYSQL_USER: lotto_user
+      MYSQL_PASSWORD: lotto1234
+    ports:
+      - "3317:3306"
+    volumes:
+      - lotto-draw-data:/var/lib/mysql
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  lotto-result-db:
+    image: mysql:8.0
+    container_name: lotto-result-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root1234
+      MYSQL_DATABASE: lotto_result
+      MYSQL_USER: lotto_user
+      MYSQL_PASSWORD: lotto1234
+    ports:
+      - "3318:3306"
+    volumes:
+      - lotto-result-data:/var/lib/mysql
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # =========================
+  # Application Services
+  # =========================
+
+  lotto-purchase-service:
+    build:
+      context: .
+      dockerfile: lotto-purchase-service/Dockerfile
+    container_name: lotto-purchase-service
+    ports:
+      - "7001:7001"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=lotto-purchase-db
+      - DB_PORT=3306
+      - DB_NAME=lotto_purchase
+      - DB_USER=lotto_user
+      - DB_PASSWORD=lotto1234
+    depends_on:
+      lotto-purchase-db:
+        condition: service_healthy
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7001/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  lotto-draw-service:
+    build:
+      context: .
+      dockerfile: lotto-draw-service/Dockerfile
+    container_name: lotto-draw-service
+    ports:
+      - "7002:7002"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=lotto-draw-db
+      - DB_PORT=3306
+      - DB_NAME=lotto_draw
+      - DB_USER=lotto_user
+      - DB_PASSWORD=lotto1234
+    depends_on:
+      lotto-draw-db:
+        condition: service_healthy
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7002/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  lotto-result-service:
+    build:
+      context: .
+      dockerfile: lotto-result-service/Dockerfile
+    container_name: lotto-result-service
+    ports:
+      - "7003:7003"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_HOST=lotto-result-db
+      - DB_PORT=3306
+      - DB_NAME=lotto_result
+      - DB_USER=lotto_user
+      - DB_PASSWORD=lotto1234
+    depends_on:
+      lotto-result-db:
+        condition: service_healthy
+    networks:
+      - lotto-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7003/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  lotto-network:
+    driver: bridge
+
+volumes:
+  lotto-purchase-data:
+    driver: local
+  lotto-draw-data:
+    driver: local
+  lotto-result-data:
+    driver: local

@@ -5,3 +5,8 @@ spring:
   application:
     name: lotto-purchase-service
 
+  datasource:
+      jdbc-url:
+      username:
+      password:
+      driver-class-name:
