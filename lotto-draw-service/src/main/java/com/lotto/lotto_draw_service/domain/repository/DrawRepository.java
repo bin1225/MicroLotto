@@ -9,4 +9,6 @@ public interface DrawRepository extends JpaRepository<Draw, Long> {
 
     // 오늘 날짜가 startDate~endDate 범위에 포함되는 회차 조회
     Optional<Draw> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(LocalDate startDate, LocalDate endDate);
+
+    Optional<Draw> findTopByOrderByDrawNoDesc();
 }

@@ -1,8 +1,14 @@
 package com.lotto.lotto_draw_service.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
+import com.lotto.lotto_draw_service.application.service.DrawService;
+import com.lotto.lotto_draw_service.client.ResultServiceClient;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
 import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
 import com.lotto.util.error.ErrorMessage;
@@ -21,6 +27,9 @@ class DrawServiceTest {
 
     @Mock
     private DrawRepository drawRepository;
+
+    @Mock
+    private ResultServiceClient resultServiceClient;
 
     @InjectMocks
     private DrawService drawService;
@@ -46,7 +55,7 @@ class DrawServiceTest {
         CurrentDrawResponse response = drawService.getCurrentDraw();
 
         //then
-        Assertions.assertThat(response.getDrawNo()).isEqualTo(draw.getDrawNo());
+        assertThat(response.getDrawNo()).isEqualTo(draw.getDrawNo());
     }
 
     @Test
@@ -61,5 +70,54 @@ class DrawServiceTest {
         Assertions.assertThatThrownBy(() -> drawService.getCurrentDraw())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining(ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage());
+    }
+
+    @Test
+    @DisplayName("rolloverDailyDraw는 현재 회차를 마감하고 결과 계산 요청 후 새 회차를 생성한다")
+    void rolloverDailyDraw_success() {
+        // given
+        LocalDate today = LocalDate.now();
+
+        Draw currentDraw = Draw.builder()
+                .id(1L)
+                .drawNo(100L)
+                .startDate(today.minusDays(1))
+                .endDate(today.plusDays(1))
+                .isClosed(false)
+                .build();
+
+        Draw latestDraw = Draw.builder()
+                .id(2L)
+                .drawNo(100L)
+                .startDate(today.minusDays(1))
+                .endDate(today.plusDays(1))
+                .isClosed(false)
+                .build();
+
+        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
+                .thenReturn(Optional.of(currentDraw)); // 현재 회차 존재
+        when(drawRepository.findTopByOrderByDrawNoDesc())
+                .thenReturn(Optional.of(latestDraw)); // 다음 회차 번호 계산용
+
+        // when
+        drawService.rolloverDailyDraw();
+
+        // then
+        assertThat(currentDraw.getIsClosed()).isTrue();
+        verify(resultServiceClient, times(1)).requestResultCalculation(100L);
+    }
+
+    @Test
+    @DisplayName("rolloverDailyDraw에서 현재 회차가 없으면 예외를 던진다")
+    void rolloverDailyDraw_notFound() {
+        // given
+        LocalDate today = LocalDate.now();
+        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
+                .thenReturn(Optional.empty());
+
+        // when and then
+        assertThatThrownBy(() -> drawService.rolloverDailyDraw())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage(ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage());
     }
 }

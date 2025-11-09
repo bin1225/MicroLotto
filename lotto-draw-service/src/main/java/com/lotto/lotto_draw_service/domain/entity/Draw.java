@@ -32,6 +32,10 @@ public class Draw {
 
     private Boolean isClosed;
 
+    public void close() {
+        this.isClosed = true;
+    }
+
     @Builder
     public Draw(Long id, Long drawNo, LocalDate startDate, LocalDate endDate, Boolean isClosed) {
         this.id = id;
