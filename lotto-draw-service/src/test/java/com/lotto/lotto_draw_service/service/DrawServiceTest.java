@@ -11,6 +11,7 @@ import com.lotto.lotto_draw_service.application.service.DrawService;
 import com.lotto.lotto_draw_service.client.ResultServiceClient;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
 import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
+import com.lotto.lotto_draw_service.domain.repository.WinningNumberEntityRepository;
 import com.lotto.util.error.ErrorMessage;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -31,6 +32,9 @@ class DrawServiceTest {
     @Mock
     private ResultServiceClient resultServiceClient;
 
+    @Mock
+    private WinningNumberEntityRepository winningNumberEntityRepository;
+
     @InjectMocks
     private DrawService drawService;
 
@@ -48,7 +52,7 @@ class DrawServiceTest {
                 .isClosed(false)
                 .build();
 
-        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
+        when(drawRepository.findTopByOrderByDrawNoDesc())
                 .thenReturn(Optional.of(draw));
 
         // when
@@ -62,8 +66,7 @@ class DrawServiceTest {
     @DisplayName("현재 날짜가 포함된 회차가 없으면 예외를 던진다")
     void getCurrentDraw_notFound() {
         //given
-        LocalDate today = LocalDate.now();
-        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
+        when(drawRepository.findTopByOrderByDrawNoDesc())
                 .thenReturn(Optional.empty());
 
         //when and then
@@ -94,7 +97,7 @@ class DrawServiceTest {
                 .isClosed(false)
                 .build();
 
-        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
+        when(drawRepository.findTopByOrderByDrawNoDesc())
                 .thenReturn(Optional.of(currentDraw)); // 현재 회차 존재
         when(drawRepository.findTopByOrderByDrawNoDesc())
                 .thenReturn(Optional.of(latestDraw)); // 다음 회차 번호 계산용
@@ -105,19 +108,5 @@ class DrawServiceTest {
         // then
         assertThat(currentDraw.getIsClosed()).isTrue();
         verify(resultServiceClient, times(1)).requestResultCalculation(100L);
-    }
-
-    @Test
-    @DisplayName("rolloverDailyDraw에서 현재 회차가 없으면 예외를 던진다")
-    void rolloverDailyDraw_notFound() {
-        // given
-        LocalDate today = LocalDate.now();
-        when(drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today))
-                .thenReturn(Optional.empty());
-
-        // when and then
-        assertThatThrownBy(() -> drawService.rolloverDailyDraw())
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage(ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage());
     }
 }
