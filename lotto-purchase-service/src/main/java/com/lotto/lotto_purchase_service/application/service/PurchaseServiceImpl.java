@@ -1,4 +1,4 @@
-package com.lotto.lotto_purchase_service.service;
+package com.lotto.lotto_purchase_service.application.service;
 
 import com.lotto.lotto_api.purchase.Lotto;
 import com.lotto.lotto_api.purchase.PurchaseService;
