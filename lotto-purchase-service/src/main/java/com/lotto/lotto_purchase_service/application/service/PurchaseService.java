@@ -1,14 +1,15 @@
 package com.lotto.lotto_purchase_service.application.service;
 
+import com.lotto.lotto_api.purchase.dto.PurchaseListResponse;
+import com.lotto.lotto_api.purchase.dto.PurchaseResponse;
 import com.lotto.lotto_purchase_service.application.LottoNumberGenerator;
-import com.lotto.lotto_purchase_service.application.dto.PurchaseListResponse;
-import com.lotto.lotto_purchase_service.application.dto.PurchaseResponse;
 import com.lotto.lotto_purchase_service.client.DrawServiceClient;
 import com.lotto.lotto_purchase_service.domain.entity.LottoNumbers;
 import com.lotto.lotto_purchase_service.domain.entity.Purchase;
 import com.lotto.lotto_purchase_service.domain.repository.PurchaseRepository;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +38,7 @@ public class PurchaseService {
 
         Purchase saved = purchaseRepository.save(purchase);
 
-        return PurchaseResponse.from(saved);
+        return getPurchaseResponse(saved);
     }
 
     /**
@@ -45,7 +46,7 @@ public class PurchaseService {
      */
     public PurchaseListResponse getPurchasesByDrawNo(Long drawNo) {
         List<Purchase> purchases = purchaseRepository.findByDrawNo(drawNo);
-        return PurchaseListResponse.from(purchases);
+        return getPurchaseListResponse(purchases);
     }
 
     /**
@@ -53,6 +54,24 @@ public class PurchaseService {
      */
     public PurchaseListResponse getAllPurchases() {
         List<Purchase> purchases = purchaseRepository.findAllByOrderByPurchasedAtDesc();
-        return PurchaseListResponse.from(purchases);
+        return getPurchaseListResponse(purchases);
+    }
+
+    private static PurchaseListResponse getPurchaseListResponse(List<Purchase> purchases) {
+        return PurchaseListResponse.builder()
+                .totalCount(purchases.size())
+                .purchases(purchases.stream()
+                        .map(PurchaseService::getPurchaseResponse)
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    private static PurchaseResponse getPurchaseResponse(Purchase saved) {
+        return PurchaseResponse.builder()
+                .id(saved.getId())
+                .drawNo(saved.getDrawNo())
+                .numbers(saved.getLottoNumbers().getNumberList())
+                .purchasedAt(saved.getPurchasedAt())
+                .build();
     }
 }

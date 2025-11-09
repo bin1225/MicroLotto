@@ -1,6 +1,7 @@
 package com.lotto.lotto_draw_service.controller;
 
-import com.lotto.lotto_draw_service.application.dto.CurrentDrawResponse;
+
+import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
 import com.lotto.lotto_draw_service.service.DrawService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

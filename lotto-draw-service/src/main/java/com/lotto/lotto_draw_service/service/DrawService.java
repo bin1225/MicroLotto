@@ -1,6 +1,7 @@
 package com.lotto.lotto_draw_service.service;
 
-import com.lotto.lotto_draw_service.application.dto.CurrentDrawResponse;
+
+import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,11 @@ public class DrawService {
                 .isClosed(false)
                 .build();
 
-        return CurrentDrawResponse.from(mockDraw);
+        return CurrentDrawResponse.builder()
+                .drawNo(mockDraw.getDrawNo())
+                .startDate(mockDraw.getStartDate().toString())
+                .endDate(mockDraw.getEndDate().toString())
+                .isClosed(mockDraw.getIsClosed())
+                .build();
     }
 }

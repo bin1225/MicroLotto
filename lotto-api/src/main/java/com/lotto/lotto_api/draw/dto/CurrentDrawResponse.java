@@ -13,10 +13,7 @@ import lombok.NoArgsConstructor;
 public class CurrentDrawResponse {
 
     private Long drawNo;
-
     private String startDate;
-
     private String endDate;
-
     private Boolean isClosed;
 }

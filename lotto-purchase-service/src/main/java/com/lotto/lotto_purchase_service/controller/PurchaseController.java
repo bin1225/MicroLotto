@@ -1,7 +1,7 @@
 package com.lotto.lotto_purchase_service.controller;
 
-import com.lotto.lotto_purchase_service.application.dto.PurchaseListResponse;
-import com.lotto.lotto_purchase_service.application.dto.PurchaseResponse;
+import com.lotto.lotto_api.purchase.dto.PurchaseListResponse;
+import com.lotto.lotto_api.purchase.dto.PurchaseResponse;
 import com.lotto.lotto_purchase_service.application.service.PurchaseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
