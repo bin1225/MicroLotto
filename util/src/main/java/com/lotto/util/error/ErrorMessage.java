@@ -23,7 +23,10 @@ public enum ErrorMessage {
 
     //lotto
     INVALID_LOTTO_NUMBER_COUNT("로또 번호는 %d개 여야 합니다."),
-    DUPLICATE_LOTTO_NUMBER("로또 번호는 중복될 수 없습니다.");
+    DUPLICATE_LOTTO_NUMBER("로또 번호는 중복될 수 없습니다."),
+
+    //draw
+    NOT_EXIST_CURRENT_DRAW("현재 진행중인 회차가 존재하지 않습니다.");
 
     private static final String PREFIX = "[ERROR] ";
     private final String message;

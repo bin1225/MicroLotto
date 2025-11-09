@@ -66,6 +66,8 @@ Microservice Architecture (MSA) 기반으로 분리하여 구현한 애플리케
   - 등록 시 해당 회차를 종료 처리 (isClosed = true)
   - result-service에 결과 계산 요청 가능
 
+- **예외**
+  - 현재 진행중인 회차가 존재하지 않는 경우
 ---
 
 ### 3. lotto-result-service (당첨 결과 및 통계 서비스)

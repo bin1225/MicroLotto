@@ -3,30 +3,35 @@ package com.lotto.lotto_draw_service.service;
 
 import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
+import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
+import com.lotto.util.error.ErrorMessage;
+import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 
 @Service
+@RequiredArgsConstructor
 public class DrawService {
+
+    private final DrawRepository drawRepository;
 
     /**
      * 현재 진행 중인 회차 조회
      */
     public CurrentDrawResponse getCurrentDraw() {
-        Draw mockDraw = Draw.builder()
-                .id(1L)
-                .drawNo(1150L)  // 현재 회차
-                .startDate(LocalDate.now().minusDays(7))
-                .endDate(LocalDate.now().plusDays(1))
-                .isClosed(false)
-                .build();
+        LocalDate today = LocalDate.now();
+
+        Draw draw = drawRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(today, today)
+                .orElseThrow(() -> new IllegalStateException(
+                        ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage()));
 
         return CurrentDrawResponse.builder()
-                .drawNo(mockDraw.getDrawNo())
-                .startDate(mockDraw.getStartDate().toString())
-                .endDate(mockDraw.getEndDate().toString())
-                .isClosed(mockDraw.getIsClosed())
+                .drawNo(draw.getDrawNo())
+                .startDate(draw.getStartDate().toString())
+                .endDate(draw.getEndDate().toString())
+                .isClosed(draw.getIsClosed())
                 .build();
     }
 }
