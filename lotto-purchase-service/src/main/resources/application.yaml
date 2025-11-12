@@ -1,14 +1,6 @@
-server:
-  port: 7001
-
 spring:
   application:
     name: lotto-purchase-service
-  datasource:
-    url: jdbc:mysql://localhost:3316/lotto_purchase
-    username: lotto_user
-    password: lotto1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,6 +8,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-services:
-  draw-service:
-    url: http://localhost:7002

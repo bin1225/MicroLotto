@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: lotto-purchase-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://lotto-purchase-db:3306/lotto_purchase
+    username: lotto_user
+    password: lotto1234
+
+server:
+  port: 8080
+
+services:
+  draw-service:
+    url: http://lotto-draw-service:8080
