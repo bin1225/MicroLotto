@@ -5,7 +5,7 @@ spring:
   application:
     name: lotto-draw-service
   datasource:
-    url: jdbc:mysql://localhost:3316/lotto_draw
+    url: jdbc:mysql://localhost:3317/lotto_draw
     username: lotto_user
     password: lotto1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -16,3 +16,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+services:
+  result-service:
+    url: http://localhost:7003

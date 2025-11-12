@@ -1,5 +1,29 @@
 spring:
   application:
     name: lotto-result-service
+  datasource:
+    url: jdbc:mysql://localhost:3318/lotto_result
+    username: lotto_user
+    password: lotto1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+
 server:
   port: 7003
+
+services:
+  draw-service:
+    url: http://localhost:7002
+  purchase-service:
+    url: http://localhost:7001
+
+logging:
+  level:
+    com.lotto: DEBUG
