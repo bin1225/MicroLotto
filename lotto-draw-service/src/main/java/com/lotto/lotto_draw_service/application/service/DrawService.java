@@ -3,7 +3,7 @@ package com.lotto.lotto_draw_service.application.service;
 
 import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
 import com.lotto.lotto_draw_service.application.WinningNumberGenerator;
-import com.lotto.lotto_draw_service.client.ResultServiceClient;
+import com.lotto.lotto_draw_service.application.event.DrawClosedEvent;
 import com.lotto.lotto_draw_service.domain.WinningNumber;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
 import com.lotto.lotto_draw_service.domain.entity.WinningNumberEntity;
@@ -11,26 +11,27 @@ import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
 import com.lotto.lotto_draw_service.domain.repository.WinningNumberEntityRepository;
 import com.lotto.util.error.ErrorMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class DrawService {
 
     private final DrawRepository drawRepository;
     private final WinningNumberEntityRepository winningNumberEntityRepository;
-    private final ResultServiceClient resultServiceClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 현재 진행 중인 회차 조회
      */
+    @Transactional(readOnly = true)
     public CurrentDrawResponse getCurrentDraw() {
-        LocalDate today = LocalDate.now();
-
         Draw draw = drawRepository.findTopByOrderByDrawNoDesc()
                 .orElseThrow(() -> new IllegalStateException(
                         ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage()));
@@ -43,36 +44,50 @@ public class DrawService {
                 .build();
     }
 
+    /**
+     * 회차 롤오버
+     */
+    @Transactional
     public Draw rolloverDailyDraw() {
-        //현재 회차 종료
+        // 1. 현재 회차 종료
         Long closedDrawNo = closeCurrentDraw();
 
+        // 2. 당첨번호 생성 및 저장
         if (closedDrawNo != null) {
-            //당첨 번호 생성
-            WinningNumber winningNumber = WinningNumberGenerator.generate();
-            WinningNumberEntity winningNumberEntity = WinningNumberEntity.from(winningNumber.getNumbers(),
-                    winningNumber.getBonusNumber(), closedDrawNo);
-            winningNumberEntityRepository.save(winningNumberEntity);
+            generateAndSaveWinningNumber(closedDrawNo);
 
-            //결과 계산 요청
-            //resultServiceClient.requestResultCalculation(closedDrawNo);
+            // 3. 트랜잭션 커밋 후 리스너 실행
+            eventPublisher.publishEvent(new DrawClosedEvent(closedDrawNo));
         }
 
-        //새로운 회차 생성 및 반환
+        // 4. 새로운 회차 생성
         return createNewDraw();
     }
 
     /**
-     * 현재 진행 중인 회차 종료 및 결과 계산 요청
+     * 현재 회차 종료
      */
     private Long closeCurrentDraw() {
-        LocalDate today = LocalDate.now();
-
         return drawRepository.findTopByOrderByDrawNoDesc()
                 .map(draw -> {
                     draw.close();
+                    log.info("Closed draw: {}", draw.getDrawNo());
                     return draw.getDrawNo();
                 }).orElse(null);
+    }
+
+    /**
+     * 당첨번호 생성 및 저장
+     */
+    private void generateAndSaveWinningNumber(Long drawNo) {
+        WinningNumber winningNumber = WinningNumberGenerator.generate();
+        WinningNumberEntity winningNumberEntity = WinningNumberEntity.from(
+                winningNumber.getNumbers(),
+                winningNumber.getBonusNumber(),
+                drawNo
+        );
+
+        winningNumberEntityRepository.save(winningNumberEntity);
     }
 
     /**
@@ -91,6 +106,8 @@ public class DrawService {
                 .isClosed(false)
                 .build();
 
-        return drawRepository.save(newDraw);
+        Draw saved = drawRepository.save(newDraw);
+        log.info("Created new draw: {}", saved.getDrawNo());
+        return saved;
     }
 }

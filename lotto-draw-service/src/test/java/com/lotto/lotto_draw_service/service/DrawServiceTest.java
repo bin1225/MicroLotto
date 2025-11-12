@@ -1,14 +1,13 @@
 package com.lotto.lotto_draw_service.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.lotto.lotto_api.draw.dto.CurrentDrawResponse;
+import com.lotto.lotto_draw_service.application.event.DrawClosedEvent;
 import com.lotto.lotto_draw_service.application.service.DrawService;
-import com.lotto.lotto_draw_service.client.ResultServiceClient;
 import com.lotto.lotto_draw_service.domain.entity.Draw;
 import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
 import com.lotto.lotto_draw_service.domain.repository.WinningNumberEntityRepository;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 @ExtendWith(MockitoExtension.class)
 class DrawServiceTest {
@@ -30,10 +30,10 @@ class DrawServiceTest {
     private DrawRepository drawRepository;
 
     @Mock
-    private ResultServiceClient resultServiceClient;
+    private WinningNumberEntityRepository winningNumberEntityRepository;
 
     @Mock
-    private WinningNumberEntityRepository winningNumberEntityRepository;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private DrawService drawService;
@@ -76,7 +76,7 @@ class DrawServiceTest {
     }
 
     @Test
-    @DisplayName("rolloverDailyDraw는 현재 회차를 마감하고 결과 계산 요청 후 새 회차를 생성한다")
+    @DisplayName("rolloverDailyDraw는 현재 회차를 마감하고 이벤트를 발행한 후 새 회차를 생성한다")
     void rolloverDailyDraw_success() {
         // given
         LocalDate today = LocalDate.now();
@@ -89,24 +89,38 @@ class DrawServiceTest {
                 .isClosed(false)
                 .build();
 
-        Draw latestDraw = Draw.builder()
-                .id(2L)
-                .drawNo(100L)
-                .startDate(today.minusDays(1))
-                .endDate(today.plusDays(1))
-                .isClosed(false)
-                .build();
+        when(drawRepository.findTopByOrderByDrawNoDesc())
+                .thenReturn(Optional.of(currentDraw))
+                .thenReturn(Optional.of(currentDraw));
 
-        when(drawRepository.findTopByOrderByDrawNoDesc())
-                .thenReturn(Optional.of(currentDraw)); // 현재 회차 존재
-        when(drawRepository.findTopByOrderByDrawNoDesc())
-                .thenReturn(Optional.of(latestDraw)); // 다음 회차 번호 계산용
+        when(drawRepository.save(any(Draw.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
-        drawService.rolloverDailyDraw();
+        Draw result = drawService.rolloverDailyDraw();
 
         // then
         assertThat(currentDraw.getIsClosed()).isTrue();
-        verify(resultServiceClient, times(1)).requestResultCalculation(100L);
+        verify(eventPublisher).publishEvent(any(DrawClosedEvent.class));
+        verify(winningNumberEntityRepository).save(any());
+        assertThat(result.getDrawNo()).isEqualTo(101L);
+    }
+
+    @Test
+    @DisplayName("회차가 없으면 첫 회차(1번)를 생성한다")
+    void rolloverDailyDraw_firstDraw() {
+        // given
+        when(drawRepository.findTopByOrderByDrawNoDesc())
+                .thenReturn(Optional.empty());
+
+        when(drawRepository.save(any(Draw.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        Draw result = drawService.rolloverDailyDraw();
+
+        // then
+        assertThat(result.getDrawNo()).isEqualTo(1L);
+        assertThat(result.getIsClosed()).isFalse();
     }
 }
