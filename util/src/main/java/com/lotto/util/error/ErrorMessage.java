@@ -20,6 +20,7 @@ public enum ErrorMessage {
     DUPLICATE_BONUS_NUMBER("보너스 번호는 당첨 번호와 중복될 수 없습니다."),
     WINNING_NUMBER_NOT_SET("먼저 당첨 번호를 입력해야 합니다."),
     INCOMPLETE_WINNING_NUMBER("당첨 번호와 보너스 번호가 모두 필요합니다."),
+    NOT_EXIST_WINNING_NUMBER("당첨 번호가 존재하지 않습니다."),
 
     //lotto
     INVALID_LOTTO_NUMBER_COUNT("로또 번호는 %d개 여야 합니다."),
