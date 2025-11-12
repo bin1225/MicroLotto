@@ -119,7 +119,7 @@ public class ResultCalculationService {
                         .purchasedNumbers(result.getPurchasedNumberList())
                         .matchCount(result.getMatchCount())
                         .bonusMatch(result.getBonusMatch())
-                        .rank(result.getRankValue())
+                        .rankValue(result.getRankValue())
                         .prizeAmount(result.getPrizeAmount())
                         .build())
                 .toList();

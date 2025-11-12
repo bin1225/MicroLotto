@@ -18,6 +18,6 @@ public class LottoResultResponse {
     private List<Integer> purchasedNumbers;
     private Integer matchCount;
     private Boolean bonusMatch;
-    private Integer rank;
+    private Integer rankValue;
     private Long prizeAmount;
 }
