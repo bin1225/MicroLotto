@@ -6,5 +6,6 @@ include(
         'lotto-draw-service',//7002
         'lotto-result-service',//7003
         'util',
-        'eureka-server'
+        'eureka-server',
+        'lotto-gateway'
 )
