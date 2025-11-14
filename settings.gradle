@@ -7,5 +7,6 @@ include(
         'lotto-result-service',//7003
         'util',
         'eureka-server',
-        'lotto-gateway'
+        'lotto-gateway',
+        'lotto-config'
 )
