@@ -24,6 +24,14 @@ public class PurchaseController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/{delay}/{faultPercent}")
+    public ResponseEntity<PurchaseResponse> purchaseWithDelayAndFault(
+            @PathVariable int delay,
+            @PathVariable int faultPercent) {
+        PurchaseResponse response = purchaseService.purchase(delay, faultPercent);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/draw/{drawNo}")
     public ResponseEntity<PurchaseListResponse> getPurchasesByDraw(
             @PathVariable Long drawNo) {

@@ -9,6 +9,7 @@ import com.lotto.lotto_draw_service.domain.entity.Draw;
 import com.lotto.lotto_draw_service.domain.entity.WinningNumberEntity;
 import com.lotto.lotto_draw_service.domain.repository.DrawRepository;
 import com.lotto.lotto_draw_service.domain.repository.WinningNumberEntityRepository;
+import com.lotto.util.Randoms;
 import com.lotto.util.error.ErrorMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,40 @@ public class DrawService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public CurrentDrawResponse getCurrentDraw(int delay, int faultPercent) {
+        Draw draw = drawRepository.findTopByOrderByDrawNoDesc()
+                .map(d-> throwErrorIfBadLuck(d, faultPercent))
+                .orElseThrow(() -> new IllegalStateException(
+                        ErrorMessage.NOT_EXIST_CURRENT_DRAW.getMessage()));
+
+        try {
+            Thread.sleep(delay * 1000L);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        return CurrentDrawResponse.builder()
+                .drawNo(draw.getDrawNo())
+                .startDate(draw.getStartDate().toString())
+                .endDate(draw.getEndDate().toString())
+                .isClosed(draw.getIsClosed())
+                .build();
+    }
+
+    private Draw throwErrorIfBadLuck(Draw draw, int faultPercent) {
+        if(faultPercent==0) return draw;
+
+        int randomNumber = Randoms.pickNumberInRange(1, 100);
+        if(faultPercent<randomNumber) {
+            log.info("Good luck, no Error {} < {}", faultPercent, randomNumber);
+        }
+        else {
+            throw new RuntimeException("Bad luck, Error " + faultPercent + " >= " + randomNumber);
+        }
+
+        return draw;
+    }
     /**
      * 회차 롤오버
      */

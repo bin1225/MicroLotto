@@ -41,6 +41,26 @@ public class PurchaseService {
         return getPurchaseResponse(saved);
     }
 
+    @Transactional
+    public PurchaseResponse purchase(int delay, int faultPercent) {
+        // 1. 현재 진행 중인 회차 조회
+        Long currentDrawNo = drawServiceClient.getCurrentDrawNo(delay, faultPercent);
+
+        // 2. 로또 번호 자동 생성
+        List<Integer> generatedNumbers = LottoNumberGenerator.generate();
+        LottoNumbers lottoNumbers = new LottoNumbers(generatedNumbers);
+
+        // 3. 구매 정보 저장
+        Purchase purchase = Purchase.builder()
+                .drawNo(currentDrawNo)
+                .lottoNumbers(lottoNumbers)
+                .build();
+
+        Purchase saved = purchaseRepository.save(purchase);
+
+        return getPurchaseResponse(saved);
+    }
+
     /**
      * 특정 회차별 구매 내역 조회
      */
