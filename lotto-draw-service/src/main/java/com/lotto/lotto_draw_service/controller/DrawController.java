@@ -32,7 +32,7 @@ public class DrawController {
             @PathVariable int delay,
             @PathVariable int faultPercent) {
         log.info("delay: {}, faultPercent: {}", delay, faultPercent);
-        CurrentDrawResponse response = drawService.getCurrentDraw(delay, faultPercent);
+        CurrentDrawResponse response = drawService.getCurrentDrawWithFaultTolerance(delay, faultPercent);
         return ResponseEntity.ok(response);
     }
 

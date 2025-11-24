@@ -57,6 +57,7 @@ public class DrawService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    public CurrentDrawResponse getCurrentDrawWithFaultTolerance(int delay, int faultPercent) {
 
         return CurrentDrawResponse.builder()
                 .drawNo(draw.getDrawNo())
