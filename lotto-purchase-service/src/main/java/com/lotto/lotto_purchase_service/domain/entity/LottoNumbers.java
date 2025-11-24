@@ -14,25 +14,30 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LottoNumbers {
 
-    public static final int LOTTO_NUMBER_COUNT = 6;
-    public static final int MIN_NUMBER = 1;
-    public static final int MAX_NUMBER = 45;
+    private static final int LOTTO_NUMBER_COUNT = 6;
+    private static final int MIN_NUMBER = 1;
+    private static final int MAX_NUMBER = 45;
+    private static final String DELIMITER = ",";
 
     @Column(nullable = false, length = 50)
     private String numbers;
 
     public LottoNumbers(List<Integer> numbers) {
         validateNumbers(numbers);
-        this.numbers = numbers.stream()
-                .sorted()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
+        this.numbers = convertToString(numbers);
     }
 
-    public List<Integer> getNumberList() {
-        return Arrays.stream(numbers.split(","))
+    public List<Integer> toList() {
+        return Arrays.stream(numbers.split(DELIMITER))
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
+    }
+
+    private String convertToString(List<Integer> numbers) {
+        return numbers.stream()
+                .sorted()
+                .map(String::valueOf)
+                .collect(Collectors.joining(DELIMITER));
     }
 
     private void validateNumbers(List<Integer> numbers) {
