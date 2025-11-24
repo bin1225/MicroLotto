@@ -21,18 +21,25 @@ public class Purchase {
     private Long id;
 
     @Column(nullable = false)
-    private Long drawNo;  // 회차 번호
+    private Long drawNo;
 
     @Embedded
     private LottoNumbers lottoNumbers;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime purchasedAt;  // 구매 시간
+    private LocalDateTime purchasedAt;
 
     @Builder
     public Purchase(Long drawNo, LottoNumbers lottoNumbers) {
         this.drawNo = drawNo;
         this.lottoNumbers = lottoNumbers;
         this.purchasedAt = LocalDateTime.now();
+    }
+
+    public static Purchase of(Long drawNo, LottoNumbers lottoNumbers) {
+        return Purchase.builder()
+                .drawNo(drawNo)
+                .lottoNumbers(lottoNumbers)
+                .build();
     }
 }

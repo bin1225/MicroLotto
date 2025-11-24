@@ -77,7 +77,12 @@ public class PurchaseService {
         return getPurchaseListResponse(purchases);
     }
 
-    private static PurchaseListResponse getPurchaseListResponse(List<Purchase> purchases) {
+    private Purchase createAndSavePurchase(Long drawNo, LottoNumbers lottoNumbers) {
+        Purchase purchase = Purchase.of(drawNo, lottoNumbers);
+        return purchaseRepository.save(purchase);
+    }
+
+    private PurchaseListResponse createPurchaseListResponse(List<Purchase> purchases) {
         return PurchaseListResponse.builder()
                 .totalCount(purchases.size())
                 .purchases(purchases.stream()
