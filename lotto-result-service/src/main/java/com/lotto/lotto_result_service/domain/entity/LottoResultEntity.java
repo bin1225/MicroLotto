@@ -9,6 +9,7 @@ import jakarta.persistence.Table;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -45,10 +46,35 @@ public class LottoResultEntity {
     @Column(nullable = false)
     private Long prizeAmount;
 
+    @Builder
+    private LottoResultEntity(
+            Long drawNo,
+            Long purchaseId,
+            List<Integer> purchasedNumbers,
+            Integer matchCount,
+            Boolean bonusMatch,
+            Integer rankValue,
+            Long prizeAmount
+    ) {
+        this.drawNo = drawNo;
+        this.purchaseId = purchaseId;
+        this.purchasedNumbers = convertToString(purchasedNumbers);
+        this.matchCount = matchCount;
+        this.bonusMatch = bonusMatch;
+        this.rankValue = rankValue;
+        this.prizeAmount = prizeAmount;
+    }
+
     public List<Integer> getPurchasedNumberList() {
         return Arrays.stream(purchasedNumbers.split(NUMBER_DELIMITER))
                 .map(String::trim)
                 .map(Integer::parseInt)
                 .collect(Collectors.toList());
+    }
+
+    private String convertToString(List<Integer> numbers) {
+        return numbers.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(NUMBER_DELIMITER));
     }
 }
