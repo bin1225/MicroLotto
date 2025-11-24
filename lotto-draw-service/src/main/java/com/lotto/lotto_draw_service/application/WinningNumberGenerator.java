@@ -12,8 +12,9 @@ public class WinningNumberGenerator {
         List<Integer> numbers = Randoms.pickUniqueNumbersInRange(MIN_NUMBER, MAX_NUMBER, SIZE);
         int bonusNumber = generateBonusNumber(numbers);
 
-        return new Builder().setWinningNumbers(numbers)
-                .setBonusNumber(bonusNumber)
+        return WinningNumber.builder()
+                .winningNumbers(numbers)
+                .bonusNumber(bonusNumber)
                 .build();
     }
 

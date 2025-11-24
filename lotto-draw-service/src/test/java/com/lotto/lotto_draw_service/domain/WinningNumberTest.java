@@ -21,8 +21,8 @@ class WinningNumberTest {
 
         // when
         WinningNumber result = new WinningNumber.Builder()
-                .setWinningNumbers(numbers)
-                .setBonusNumber(bonus)
+                .winningNumbers(numbers)
+                .bonusNumber(bonus)
                 .build();
 
         // then
@@ -39,8 +39,8 @@ class WinningNumberTest {
 
         // when & then
         assertThatThrownBy(() -> new Builder()
-                .setWinningNumbers(numbers)
-                .setBonusNumber(bonus)
+                .winningNumbers(numbers)
+                .bonusNumber(bonus)
                 .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(ErrorMessage.INVALID_WINNING_NUMBER_COUNT.getMessage(WinningNumber.SIZE));
@@ -54,8 +54,8 @@ class WinningNumberTest {
 
         // when & then
         assertThatThrownBy(() -> new WinningNumber.Builder()
-                .setWinningNumbers(numbers)
-                .setBonusNumber(bonus)
+                .winningNumbers(numbers)
+                .bonusNumber(bonus)
                 .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(ErrorMessage.INVALID_NUMBER_RANGE.getMessage(WinningNumber.MIN_NUMBER, WinningNumber.MAX_NUMBER));
@@ -69,8 +69,8 @@ class WinningNumberTest {
 
         // when & then
         assertThatThrownBy(() -> new WinningNumber.Builder()
-                .setWinningNumbers(numbers)
-                .setBonusNumber(bonus)
+                .winningNumbers(numbers)
+                .bonusNumber(bonus)
                 .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(ErrorMessage.DUPLICATE_WINNING_NUMBER.getMessage());
@@ -84,8 +84,8 @@ class WinningNumberTest {
 
         // when & then
         assertThatThrownBy(() -> new WinningNumber.Builder()
-                .setWinningNumbers(numbers)
-                .setBonusNumber(bonus)
+                .winningNumbers(numbers)
+                .bonusNumber(bonus)
                 .build())
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining(ErrorMessage.DUPLICATE_BONUS_NUMBER.getMessage());

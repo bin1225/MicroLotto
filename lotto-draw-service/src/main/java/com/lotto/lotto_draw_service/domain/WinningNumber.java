@@ -21,44 +21,54 @@ public class WinningNumber {
         this.bonusNumber = bonusNumber;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
     public static class Builder {
         private List<Integer> winningNumbers;
         private Integer bonusNumber;
 
-        public Builder setWinningNumbers(List<Integer> numbers) {
+        public Builder winningNumbers(List<Integer> numbers) {
             validateWinningNumbers(numbers);
             this.winningNumbers = numbers;
             return this;
         }
 
-        public Builder setBonusNumber(int bonusNumber) {
-            if (winningNumbers == null) {
-                throw new IllegalStateException(WINNING_NUMBER_NOT_SET.getMessage());
-            }
+        public Builder bonusNumber(int bonusNumber) {
+            validateBuilderState();
             validateBonusNumber(bonusNumber, winningNumbers);
             this.bonusNumber = bonusNumber;
             return this;
         }
 
         public WinningNumber build() {
+            validateComplete();
+            return new WinningNumber(winningNumbers, bonusNumber);
+        }
+
+        private void validateBuilderState() {
+            if (winningNumbers == null) {
+                throw new IllegalStateException(WINNING_NUMBER_NOT_SET.getMessage());
+            }
+        }
+
+        private void validateComplete() {
             if (winningNumbers == null || bonusNumber == null) {
                 throw new IllegalStateException(INCOMPLETE_WINNING_NUMBER.getMessage());
             }
-            return new WinningNumber(winningNumbers, bonusNumber);
         }
     }
 
-    public static void validateWinningNumbers(List<Integer> numbers) {
+    private static void validateWinningNumbers(List<Integer> numbers) {
         validateSize(numbers);
-        numbers.forEach(WinningNumber::validateNumberRange);
-        validateNoDuplicate(numbers);
+        validateRange(numbers);
+        validateDuplication(numbers);
     }
 
     private static void validateBonusNumber(int bonusNumber, List<Integer> winningNumbers) {
         validateNumberRange(bonusNumber);
-        if (winningNumbers.contains(bonusNumber)) {
-            throw new IllegalArgumentException(DUPLICATE_BONUS_NUMBER.getMessage());
-        }
+        validateBonusNotDuplicate(bonusNumber, winningNumbers);
     }
 
     private static void validateSize(List<Integer> numbers) {
@@ -67,15 +77,33 @@ public class WinningNumber {
         }
     }
 
-    private static void validateNoDuplicate(List<Integer> numbers) {
-        if (new HashSet<>(numbers).size() != numbers.size()) {
+    private static void validateRange(List<Integer> numbers) {
+        numbers.forEach(WinningNumber::validateNumberRange);
+    }
+
+    private static void validateDuplication(List<Integer> numbers) {
+        if (hasDuplicates(numbers)) {
             throw new IllegalArgumentException(DUPLICATE_WINNING_NUMBER.getMessage());
         }
     }
 
+    private static boolean hasDuplicates(List<Integer> numbers) {
+        return new HashSet<>(numbers).size() != numbers.size();
+    }
+
+    private static void validateBonusNotDuplicate(int bonusNumber, List<Integer> winningNumbers) {
+        if (winningNumbers.contains(bonusNumber)) {
+            throw new IllegalArgumentException(DUPLICATE_BONUS_NUMBER.getMessage());
+        }
+    }
+
     private static void validateNumberRange(int number) {
-        if (number < MIN_NUMBER || number > MAX_NUMBER) {
+        if (isOutOfRange(number)) {
             throw new IllegalArgumentException(INVALID_NUMBER_RANGE.getMessage(MIN_NUMBER, MAX_NUMBER));
         }
+    }
+
+    private static boolean isOutOfRange(int number) {
+        return number < MIN_NUMBER || number > MAX_NUMBER;
     }
 }
