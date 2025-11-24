@@ -8,135 +8,58 @@ import com.lotto.lotto_result_service.client.DrawServiceClient;
 import com.lotto.lotto_result_service.client.PurchaseServiceClient;
 import com.lotto.lotto_result_service.domain.entity.LottoResultEntity;
 import com.lotto.lotto_result_service.domain.repository.LottoResultEntityRepository;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ResultCalculationService {
+
+    private static final Map<Integer, Long> PRIZE_AMOUNTS = Map.of(
+            1, 2_000_000_000L,
+            2, 30_000_000L,
+            3, 1_500_000L,
+            4, 50_000L,
+            5, 5_000L
+    );
+
+    private static final int MIN_RANK = 1;
+    private static final int MAX_RANK = 5;
+    private static final int NO_PRIZE_RANK = 0;
 
     private final DrawServiceClient drawServiceClient;
     private final PurchaseServiceClient purchaseServiceClient;
     private final LottoResultEntityRepository resultRepository;
 
-    private static final Map<Integer, Long> PRIZE_MAP = Map.of(
-            1, 2_000_000_000L,  // 1등: 6개 일치
-            2, 30_000_000L,     // 2등: 5개 + 보너스
-            3, 1_500_000L,      // 3등: 5개 일치
-            4, 50_000L,         // 4등: 4개 일치
-            5, 5_000L           // 5등: 3개 일치
-    );
-
     @Transactional
     public void calculateResults(Long drawNo) {
+        WinningNumberResponse winningNumber = fetchWinningNumber(drawNo);
+        List<PurchaseResponse> purchases = fetchPurchases(drawNo);
 
-        // 1. draw-service에서 당첨 번호 조회
-        WinningNumberResponse winningNumber = drawServiceClient.getWinningNumber(drawNo);
-
-        // 2. purchase-service에서 해당 회차의 모든 구매 내역 조회
-        List<PurchaseResponse> purchases = purchaseServiceClient.getPurchasesByDrawNo(drawNo);
-
-        // 3. 각 구매 내역에 대해 결과 계산 및 저장
-        List<LottoResultEntity> results = new ArrayList<>();
-        for (PurchaseResponse purchase : purchases) {
-            LottoResultEntity result = calculateSingleResult(
-                    drawNo,
-                    purchase,
-                    winningNumber.getWinningNumbers(),
-                    winningNumber.getBonusNumber()
-            );
-            results.add(result);
-        }
-
+        List<LottoResultEntity> results = calculateAllResults(drawNo, purchases, winningNumber);
         resultRepository.saveAll(results);
+
+        log.info("회차 {} 결과 계산 완료 - 총 {}건", drawNo, results.size());
     }
 
-    private LottoResultEntity calculateSingleResult(
-            Long drawNo,
-            PurchaseResponse purchase,
-            List<Integer> winningNumbers,
-            Integer bonusNumber
-    ) {
-        List<Integer> purchasedNumbers = purchase.getNumbers();
-
-        // 당첨 번호와 일치하는 개수 계산
-        long matchCount = purchasedNumbers.stream()
-                .filter(winningNumbers::contains)
-                .count();
-
-        // 보너스 번호 일치 여부
-        boolean bonusMatch = purchasedNumbers.contains(bonusNumber);
-
-        // 등수 결정
-        int rankValue = determineRank((int) matchCount, bonusMatch);
-
-        // 상금 결정
-        long prizeAmount = PRIZE_MAP.getOrDefault(rankValue, 0L);
-
-        LottoResultEntity result = LottoResultEntity.builder()
-                .drawNo(drawNo)
-                .purchaseId(purchase.getId())
-                .matchCount((int) matchCount)
-                .bonusMatch(bonusMatch)
-                .rankValue(rankValue)
-                .prizeAmount(prizeAmount)
-                .build();
-
-        result.setPurchasedNumbers(purchasedNumbers);
-
-        return result;
-    }
-
-    private int determineRank(int matchCount, boolean bonusMatch) {
-        if (matchCount == 6) {
-            return 1; // 1등: 6개 일치
-        } else if (matchCount == 5 && bonusMatch) {
-            return 2; // 2등: 5개 + 보너스
-        } else if (matchCount == 5) {
-            return 3; // 3등: 5개 일치
-        } else if (matchCount == 4) {
-            return 4; // 4등: 4개 일치
-        } else if (matchCount == 3) {
-            return 5; // 5등: 3개 일치
-        }
-        return 0; // 꽝
-    }
-
-    @Transactional(readOnly = true)
     public List<LottoResultResponse> getResultsByDrawNo(Long drawNo) {
         List<LottoResultEntity> results = resultRepository.findByDrawNo(drawNo);
-
         return results.stream()
-                .map(result -> LottoResultResponse.builder()
-                        .id(result.getId())
-                        .drawNo(result.getDrawNo())
-                        .purchaseId(result.getPurchaseId())
-                        .purchasedNumbers(result.getPurchasedNumberList())
-                        .matchCount(result.getMatchCount())
-                        .bonusMatch(result.getBonusMatch())
-                        .rankValue(result.getRankValue())
-                        .prizeAmount(result.getPrizeAmount())
-                        .build())
-                .toList();
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public ResultStatisticsResponse getStatistics(Long drawNo) {
-        Map<Integer, Long> rankCounts = new HashMap<>();
-        Map<Integer, Long> rankPrizes = new HashMap<>();
-
-        for (int rank = 1; rank <= 5; rank++) {
-            Long count = resultRepository.countByDrawNoAndRank(drawNo, rank);
-            Long prizeSum = resultRepository.sumPrizeAmountByDrawNoAndRank(drawNo, rank);
-
-            rankCounts.put(rank, count != null ? count : 0L);
-            rankPrizes.put(rank, prizeSum != null ? prizeSum : 0L);
-        }
+        Map<Integer, Long> rankCounts = calculateRankCounts(drawNo);
+        Map<Integer, Long> rankPrizes = calculateRankPrizes(drawNo);
 
         int totalPurchases = resultRepository.findByDrawNo(drawNo).size();
         Long totalPrizeAmount = resultRepository.sumTotalPrizeAmountByDrawNo(drawNo);
@@ -147,6 +70,109 @@ public class ResultCalculationService {
                 .rankCounts(rankCounts)
                 .rankPrizes(rankPrizes)
                 .totalPrizeAmount(totalPrizeAmount != null ? totalPrizeAmount : 0L)
+                .build();
+    }
+
+    private WinningNumberResponse fetchWinningNumber(Long drawNo) {
+        return drawServiceClient.getWinningNumber(drawNo);
+    }
+
+    private List<PurchaseResponse> fetchPurchases(Long drawNo) {
+        return purchaseServiceClient.getPurchasesByDrawNo(drawNo);
+    }
+
+    private List<LottoResultEntity> calculateAllResults(
+            Long drawNo,
+            List<PurchaseResponse> purchases,
+            WinningNumberResponse winningNumber
+    ) {
+        return purchases.stream()
+                .map(purchase -> calculateSingleResult(drawNo, purchase, winningNumber))
+                .collect(Collectors.toList());
+    }
+
+    private LottoResultEntity calculateSingleResult(
+            Long drawNo,
+            PurchaseResponse purchase,
+            WinningNumberResponse winningNumber
+    ) {
+        List<Integer> purchasedNumbers = purchase.getNumbers();
+        List<Integer> winningNumbers = winningNumber.getWinningNumbers();
+        Integer bonusNumber = winningNumber.getBonusNumber();
+
+        int matchCount = calculateMatchCount(purchasedNumbers, winningNumbers);
+        boolean bonusMatch = purchasedNumbers.contains(bonusNumber);
+        int rank = determineRank(matchCount, bonusMatch);
+        long prizeAmount = getPrizeAmount(rank);
+
+        return LottoResultEntity.builder()
+                .drawNo(drawNo)
+                .purchaseId(purchase.getId())
+                .purchasedNumbers(purchasedNumbers)
+                .matchCount(matchCount)
+                .bonusMatch(bonusMatch)
+                .rankValue(rank)
+                .prizeAmount(prizeAmount)
+                .build();
+    }
+
+    private int calculateMatchCount(List<Integer> purchasedNumbers, List<Integer> winningNumbers) {
+        return (int) purchasedNumbers.stream()
+                .filter(winningNumbers::contains)
+                .count();
+    }
+
+    private int determineRank(int matchCount, boolean bonusMatch) {
+        if (matchCount == 6) {
+            return 1;
+        }
+        if (matchCount == 5 && bonusMatch) {
+            return 2;
+        }
+        if (matchCount == 5) {
+            return 3;
+        }
+        if (matchCount == 4) {
+            return 4;
+        }
+        if (matchCount == 3) {
+            return 5;
+        }
+        return NO_PRIZE_RANK;
+    }
+
+    private long getPrizeAmount(int rank) {
+        return PRIZE_AMOUNTS.getOrDefault(rank, 0L);
+    }
+
+    private Map<Integer, Long> calculateRankCounts(Long drawNo) {
+        Map<Integer, Long> rankCounts = new HashMap<>();
+        for (int rank = MIN_RANK; rank <= MAX_RANK; rank++) {
+            Long count = resultRepository.countByDrawNoAndRank(drawNo, rank);
+            rankCounts.put(rank, count != null ? count : 0L);
+        }
+        return rankCounts;
+    }
+
+    private Map<Integer, Long> calculateRankPrizes(Long drawNo) {
+        Map<Integer, Long> rankPrizes = new HashMap<>();
+        for (int rank = MIN_RANK; rank <= MAX_RANK; rank++) {
+            Long prizeSum = resultRepository.sumPrizeAmountByDrawNoAndRank(drawNo, rank);
+            rankPrizes.put(rank, prizeSum != null ? prizeSum : 0L);
+        }
+        return rankPrizes;
+    }
+
+    private LottoResultResponse mapToResponse(LottoResultEntity result) {
+        return LottoResultResponse.builder()
+                .id(result.getId())
+                .drawNo(result.getDrawNo())
+                .purchaseId(result.getPurchaseId())
+                .purchasedNumbers(result.getPurchasedNumberList())
+                .matchCount(result.getMatchCount())
+                .bonusMatch(result.getBonusMatch())
+                .rankValue(result.getRankValue())
+                .prizeAmount(result.getPrizeAmount())
                 .build();
     }
 }
