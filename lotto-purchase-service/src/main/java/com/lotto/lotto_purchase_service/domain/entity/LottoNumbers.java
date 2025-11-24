@@ -41,14 +41,46 @@ public class LottoNumbers {
     }
 
     private void validateNumbers(List<Integer> numbers) {
+        validateCount(numbers);
+        validateDuplication(numbers);
+        validateRange(numbers);
+    }
+
+    private void validateCount(List<Integer> numbers) {
         if (numbers.size() != LOTTO_NUMBER_COUNT) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_LOTTO_NUMBER_COUNT.getMessage(LOTTO_NUMBER_COUNT));
+            throw new IllegalArgumentException(
+                    ErrorMessage.INVALID_LOTTO_NUMBER_COUNT.getMessage(LOTTO_NUMBER_COUNT)
+            );
         }
+    }
+
+    private void validateDuplication(List<Integer> numbers) {
         if (numbers.stream().distinct().count() != LOTTO_NUMBER_COUNT) {
             throw new IllegalArgumentException(ErrorMessage.DUPLICATE_LOTTO_NUMBER.getMessage());
         }
-        if (numbers.stream().anyMatch(n -> n < MIN_NUMBER || n > MAX_NUMBER)) {
-            throw new IllegalArgumentException(ErrorMessage.INVALID_NUMBER_RANGE.getMessage(MIN_NUMBER, MAX_NUMBER));
+    }
+
+    private void validateRange(List<Integer> numbers) {
+        if (numbers.stream().anyMatch(this::isOutOfRange)) {
+            throw new IllegalArgumentException(
+                    ErrorMessage.INVALID_NUMBER_RANGE.getMessage(MIN_NUMBER, MAX_NUMBER)
+            );
         }
+    }
+
+    private boolean isOutOfRange(int number) {
+        return number < MIN_NUMBER || number > MAX_NUMBER;
+    }
+
+    public static int getMinNumber() {
+        return MIN_NUMBER;
+    }
+
+    public static int getMaxNumber() {
+        return MAX_NUMBER;
+    }
+
+    public static int getCount() {
+        return LOTTO_NUMBER_COUNT;
     }
 }
