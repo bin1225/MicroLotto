@@ -19,21 +19,21 @@ public class PurchaseController {
     private final PurchaseService purchaseService;
 
     @PostMapping
-    public ResponseEntity<PurchaseResponse> purchase() {
+    public ResponseEntity<PurchaseResponse> createPurchase() {
         PurchaseResponse response = purchaseService.purchase();
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{delay}/{faultPercent}")
-    public ResponseEntity<PurchaseResponse> purchaseWithDelayAndFault(
+    public ResponseEntity<PurchaseResponse> createPurchaseWithFaultTolerance(
             @PathVariable int delay,
             @PathVariable int faultPercent) {
-        PurchaseResponse response = purchaseService.purchase(delay, faultPercent);
+        PurchaseResponse response = purchaseService.purchaseWithFaultTolerance(delay, faultPercent);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/draw/{drawNo}")
-    public ResponseEntity<PurchaseListResponse> getPurchasesByDraw(
+    public ResponseEntity<PurchaseListResponse> getPurchasesByDrawNumber(
             @PathVariable Long drawNo) {
         PurchaseListResponse response = purchaseService.getPurchasesByDrawNo(drawNo);
         return ResponseEntity.ok(response);
