@@ -9,13 +9,17 @@ import jakarta.persistence.Table;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "lotto_results")
 @Getter
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class LottoResultEntity {
 
     private static final String NUMBER_DELIMITER = ",";
