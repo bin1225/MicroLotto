@@ -4,10 +4,17 @@ import com.lotto.lotto_purchase_service.domain.entity.LottoNumbers;
 import com.lotto.util.Randoms;
 import java.util.List;
 
-public class LottoNumberGenerator {
+public final class LottoNumberGenerator {
+
+    private LottoNumberGenerator() {
+        throw new AssertionError("인스턴스 생성 불가");
+    }
 
     public static List<Integer> generate() {
-        return Randoms.pickUniqueNumbersInRange(LottoNumbers.MIN_NUMBER, LottoNumbers.MAX_NUMBER,
-                LottoNumbers.LOTTO_NUMBER_COUNT);
+        return Randoms.pickUniqueNumbersInRange(
+                LottoNumbers.getMinNumber(),
+                LottoNumbers.getMaxNumber(),
+                LottoNumbers.getCount()
+        );
     }
 }
